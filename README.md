@@ -1,1 +1,1 @@
-# degenerate_coder_designer
+# degenerate_codon_designer

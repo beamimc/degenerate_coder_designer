@@ -4,11 +4,12 @@
 @author: beamimc
 
 """
+import time
 
 import streamlit as st
 import pandas as pd
 import numpy as np
-import time
+
 from dcg import generateCodon, get_equivalent_codons, get_coded_aas
 
 st.title('Degenerate codon designer')
@@ -50,6 +51,7 @@ if run:
     df_all = pd.read_csv('./datasets/deg_codons_DB.csv')
     eq_str = ''
     cd_str = ''
+    aux = {}
     for ele in sorted_combi_prop:
         codon = ele[0]
         equivalents = get_equivalent_codons(df_all, codon)
@@ -61,5 +63,14 @@ if run:
         coded_aas = get_coded_aas(df_all, codon)
         s ="".join(str(elem) for elem in coded_aas)
         cd_str+=(f'Codon {codon} codes for: {s}\n')
+        
+        aux[codon] = len(coded_aas)
+        # df = pd.DataFrame(index = list(combi_prop.keys()),columns = ['count'])
+        # print(df)
+        # df.append({'count':len(coded_aas)}, ignore_index = True)
     st.markdown(eq_str)
     st.markdown(cd_str)
+    
+    ###
+    df = pd.DataFrame.from_dict(aux,orient ='index')
+    st.bar_chart(df, width=0, height=0, use_container_width=True)

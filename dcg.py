@@ -164,7 +164,7 @@ def generateCodon(AAset):
                 combi_prop = same_probability(df_all,[combi])
                 return combi_prop
                 # return combi    
-    if len(pull) <= 50 : 
+    if len(pull) <= 40 : 
         print('brute force')
         #####solve by brute force --> works but too much time or OutOfMemoryError
         ##### only do if nº of posible codons is <50 and didnt find only 1 codon
@@ -173,6 +173,7 @@ def generateCodon(AAset):
         #at most, the max num of deg_codon needed would be the nº of AA in AAset
         max_codons = len(AAset)
         for i in range(2,max_codons+1):
+            print('combinations of, ',i)
             combinations = list(it.combinations(pull, i))
             for combi in combinations:
                 #check if combination meet restriction 1: 1aa encodeb by just 1 codon
@@ -240,10 +241,12 @@ def generateCodon(AAset):
         return combi_prop
 
 def main():
+    
+    good_example = 'GAVCPLIMWF'
+    
     all_AA = 'SNIRHLGDVCYFKTQPEAMW'
     charged = 'KRED'
     charged_ = 'KREDH'
-    non_polar = 'GAVCPLIMWF'
     polar = 'STYNQ'
     # #get arguments from cmd    
     ok = True                           

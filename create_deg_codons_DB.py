@@ -49,6 +49,7 @@ deg_nucl={
          'Y':['C','T']
         }
 
+
 def deg_codon_to_aa(deg_codon):
     def get_all_real_codons(deg_codon):
          posibilities = []
@@ -56,9 +57,25 @@ def deg_codon_to_aa(deg_codon):
              for n2 in deg_nucl[deg_codon[1]]:
                  for n3 in deg_nucl[deg_codon[2]]:
                      posibilities.append(n1+n2+n3)
+         # print(posibilities)
          return posibilities
     posibilities = get_all_real_codons(deg_codon)
-    df_aas = pd.DataFrame(columns = ['count'], index =aas).fillna(0)   
+    df_aas = pd.DataFrame(columns = ['count'], index =aas).fillna(0)  
+    
+    ## remove redundant deg_codons ej TTR codes L 2 times, so we only leave the 
+    ## redundant normal codons TTA, TTG, 
+    ok = True
+    if len(posibilities)>1:
+        coded = []
+        for codon in posibilities:    
+            coded.append(codon_aa[codon])
+        # print(coded)
+        if len(set(coded)) == 1 and deg_codon not in set(codon_aa.keys()):
+            ok = False
+    ## remove redundant deg_codons ej TTA and TTG both code L 1 times
+    ## we only keep 1 option
+    deg_codon not in set(codon_aa.keys())
+    
     for codon in posibilities:    
         aa = codon_aa[codon]
         df_aas.loc[aa,'count'] +=1
@@ -70,7 +87,7 @@ def deg_codon_to_aa(deg_codon):
 
     dc = df_aas['count'].to_dict()
     dc['deg_codon'] = deg_codon
-    return dc
+    return dc, ok 
 
 def create_db_codon():
     def get_degenerated_codons():
@@ -83,6 +100,11 @@ def create_db_codon():
                      all_deg_codons.append(n1+n2+n3)
         return all_deg_codons
     
+    
+    #
+    aux = {}
+    for aa in aas:
+        aux[aa]=0
     #get all posible combinations into df
     all_deg_codons = get_degenerated_codons()
     columns = ['deg_codon']
@@ -90,9 +112,16 @@ def create_db_codon():
     df = pd.DataFrame(columns=columns)
     #generate df of codon and aa they code proportionally
     for deg_codon in all_deg_codons:
-        dc_aa = deg_codon_to_aa(deg_codon)
-        df = df.append(dc_aa,ignore_index=True)
-
+        dc_aa, ok = deg_codon_to_aa(deg_codon)
+        if ok:
+            df = df.append(dc_aa,ignore_index=True)
+ 
+    ### remove codons that do the same 
+    df = df.drop_duplicates(
+          subset = aas,
+          keep = 'first').reset_index(drop = True)
+    
+    
     return df
 
 if __name__ == '__main__':
@@ -100,6 +129,10 @@ if __name__ == '__main__':
     current_path = os.getcwd()
     print('Creating DB')  
     df = create_db_codon()
-    df.to_csv(current_path+'\\deg_codons_DB.csv',index = False)
-    print(f'File saved at {current_path}\\deg_codons_DB.csv')
+    df.to_csv(current_path+'\\deg_codons_DB_clean.csv',index = False)
+    print(f'File saved at {current_path}\\deg_codons_DB_clean.csv')
     executionTime = (time.time() - startTime)
+   
+    # a,b = deg_codon_to_aa('TTA')
+    # print(a,b)
+    

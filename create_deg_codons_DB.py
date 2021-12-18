@@ -12,7 +12,7 @@ import os
 from dcg import gcm_multiple
 # global variables
 aas = ['I','M','T','N','K','S','R','L','P','H','Q','V',
-       'A','D','E','G','F','Y','C','W','STOP']
+       'A','D','E','G','F','Y','C','W','X']
 codon_aa={
         'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M',
         'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T',
@@ -28,8 +28,8 @@ codon_aa={
         'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGT':'G',
         'TCA':'S', 'TCC':'S', 'TCG':'S', 'TCT':'S',
         'TTC':'F', 'TTT':'F', 'TTA':'L', 'TTG':'L',
-        'TAC':'Y', 'TAT':'Y', 'TAA':'STOP', 'TAG':'STOP',
-        'TGC':'C', 'TGT':'C', 'TGA':'STOP', 'TGG':'W'
+        'TAC':'Y', 'TAT':'Y', 'TAA':'X', 'TAG':'X',
+        'TGC':'C', 'TGT':'C', 'TGA':'X', 'TGG':'W'
         }
 deg_nucl={
          'A':['A'],
@@ -89,6 +89,7 @@ def deg_codon_to_aa(deg_codon):
     dc['deg_codon'] = deg_codon
     return dc, ok 
 
+
 def create_db_codon():
     def get_degenerated_codons():
         ##15x15x15 different posible deg_codons
@@ -99,9 +100,6 @@ def create_db_codon():
                  for n3 in bases:
                      all_deg_codons.append(n1+n2+n3)
         return all_deg_codons
-    
-    
-    #
     aux = {}
     for aa in aas:
         aux[aa]=0
@@ -110,29 +108,36 @@ def create_db_codon():
     columns = ['deg_codon']
     columns.extend(aas)
     df = pd.DataFrame(columns=columns)
+    df_clean = pd.DataFrame(columns=columns)
     #generate df of codon and aa they code proportionally
     for deg_codon in all_deg_codons:
         dc_aa, ok = deg_codon_to_aa(deg_codon)
+        df = df.append(dc_aa,ignore_index=True)
         if ok:
-            df = df.append(dc_aa,ignore_index=True)
+            df_clean = df_clean.append(dc_aa,ignore_index=True)
  
     ### remove codons that do the same 
-    df = df.drop_duplicates(
+    df_clean = df_clean.drop_duplicates(
           subset = aas,
           keep = 'first').reset_index(drop = True)
-    
-    
-    return df
+    return df, df_clean
 
 if __name__ == '__main__':
-    startTime = time.time()
     current_path = os.getcwd()
-    print('Creating DB')  
-    df = create_db_codon()
-    df.to_csv(current_path+'\\deg_codons_DB_clean.csv',index = False)
-    print(f'File saved at {current_path}\\deg_codons_DB_clean.csv')
-    executionTime = (time.time() - startTime)
-   
-    # a,b = deg_codon_to_aa('TTA')
-    # print(a,b)
+    directory = 'datasets'
     
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+        
+    print('Creating DB and cleaned DB')  
+    filename = 'deg_codons_DB.csv'
+    filename_clean = 'deg_codons_DB_clean.csv'
+    
+    df, df_clean = create_db_codon()
+    
+    df.to_csv(current_path+'\\'+directory+'\\'+filename,index = False)
+    print(f'File saved at {current_path}\\{directory}\\{filename}')
+    
+    df_clean.to_csv(current_path+'\\'+directory+'\\'+filename_clean,index = False)
+    print(f'File saved at {current_path}\\{directory}\\{filename_clean}')
+

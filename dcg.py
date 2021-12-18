@@ -8,12 +8,14 @@ import pandas as pd
 import math 
 import time
 import itertools as it
-
+import random
+import argparse
+# from metaheuristic import SA
 __all__ = [ "generateCodon" ]
 
 # global variables
 aas = ['I','M','T','N','K','S','R','L','P','H','Q','V',
-       'A','D','E','G','F','Y','C','W','STOP']
+       'A','D','E','G','F','Y','C','W','X']
 codon_aa={
         'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M',
         'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T',
@@ -29,8 +31,8 @@ codon_aa={
         'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGT':'G',
         'TCA':'S', 'TCC':'S', 'TCG':'S', 'TCT':'S',
         'TTC':'F', 'TTT':'F', 'TTA':'L', 'TTG':'L',
-        'TAC':'Y', 'TAT':'Y', 'TAA':'STOP', 'TAG':'STOP',
-        'TGC':'C', 'TGT':'C', 'TGA':'STOP', 'TGG':'W'
+        'TAC':'Y', 'TAT':'Y', 'TAA':'X', 'TAG':'X',
+        'TGC':'C', 'TGT':'C', 'TGA':'X', 'TGG':'W'
         }
 deg_nucl={
          'A':['A'],
@@ -49,7 +51,8 @@ deg_nucl={
          'W':['A','T'],
          'Y':['C','T']
         }
-
+        
+        
 def gcm_multiple(list_numbers):
     if 1 in list_numbers:
         return 1
@@ -116,14 +119,23 @@ def same_probability(df_all,list_deg_codons):
         len_list.append(len(coded_aas))
     gcm = gcm_multiple(len_list)
     proportions = []
-    for ele in len_list:
-        proportions.append(ele / gcm)
-    return proportions
+    cod_prop={}
+    for i in range(len(len_list)):
+        cod_prop[list_deg_codons[i]] = len_list[i] / gcm
+        # proportions.append(ele/gcm)
+    return cod_prop
 
+def get_equivalent_codons(df_all, deg_codon):
+    # newdf1 = df_all.groupby(aas)
+    for _, df in  df_all.groupby(aas):
+        codons = df['deg_codon'].tolist()
+        if deg_codon in codons:
+            return codons
 
 def generateCodon(AAset):
     #get all posible deg_codons
-    df_all = pd.read_csv('deg_codons_DB.csv')
+    df_all = pd.read_csv('./datasets/deg_codons_DB_clean.csv')
+    
     #filter by restriction 3: all aas coded by same probl
     df_all = restriction_3(df_all)
     
@@ -133,7 +145,7 @@ def generateCodon(AAset):
     #get pull of deg_codons that can be used to create a combination
     pull = df_all['deg_codon'].tolist()
     print(len(pull))
-    
+
     ###check if 1 deg_codon codes all AAset
     #####################################
     for combi in pull:
@@ -149,8 +161,11 @@ def generateCodon(AAset):
             if valid_combi:
                 # if found a valid combi we stop bc it is the smallest
                 # since started checking combination 1 to 1, 2 to 2, etc
-                return combi    
-    if len(pull) <= 50 :   
+                combi_prop = same_probability(df_all,[combi])
+                return combi_prop
+                # return combi    
+    if len(pull) <= 50 : 
+        print('brute force')
         #####solve by brute force --> works but too much time or OutOfMemoryError
         ##### only do if nº of posible codons is <50 and didnt find only 1 codon
         ##### best solution guaranteed
@@ -172,38 +187,115 @@ def generateCodon(AAset):
                     if valid_combi:
                         # if found a valid combi we stop bc it is the smallest
                         # since started checking combination 1 to 1, 2 to 2, etc
-                        return combi
+                        combi_prop = same_probability(df_all,combi)
+                        return combi_prop
+                        # return combi
     else:
-        ######## greedy search--> fast but not optimum
+        ######## greedy search--> fast
         ######## best solution not guaranteed
         #####################################
         AAset = set(AAset)
         print('greedy')
-        print(AAset)
-        combi = []
-        while len(AAset)>0:
-            # first , get deg_codon that codes the most aas in AAset
-            id_max = df_all[aas].sum(axis=1).idxmax() 
-            max_codon = df_all.iloc[id_max,0]
-            already_coded = set(get_coded_aas(df_all, max_codon))
-            combi.extend([max_codon])
-            print(max_codon,already_coded)
+        stop = False
+        best = pull
+        best_n = len(pull)
+        i = 0
+        not_better = 0
+        while not stop:
+            ##inicialize on random codon, and then greddy search 
+            combi = []
+            AAset_ = set(AAset)
+            initial_codon =random.choice(pull)
+            combi.append(initial_codon)
+            # print(initial_codon)
+            already_coded = set(get_coded_aas(df_all, initial_codon))
+            # print(already_coded)
             #new AAset with aas not yet coded
-            AAset -=already_coded
+            AAset_ -=already_coded
             ##make meet restriction 2
-            df_all = restriction_2(df_all,AAset)
-    return combi
+            df = restriction_2(df_all,AAset_)
+            while len(AAset_)>0:
+                # first , get deg_codon that codes the most aas in AAset
+                id_max = df[aas].sum(axis=1).idxmax() 
+                max_codon = df.iloc[id_max,0]
+                already_coded = set(get_coded_aas(df, max_codon))
+                combi.extend([max_codon])
+                # print(max_codon,already_coded)
+                #new AAset with aas not yet coded
+                AAset_ -=already_coded
+                ##make meet restriction 2
+                df = restriction_2(df,AAset_)
+            # print(combi)
+            if len(combi)<len(best):
+                best = combi.copy()
+                best_n = len(combi)
+            else:
+                not_better +=1
+            i+=1
+            if not_better >150:
+                stop = True 
+        combi = best.copy()
+        ## get proportions of the best combination found
+        combi_prop = same_probability(df_all,combi)
+        return combi_prop
 
+def main():
+    all_AA = 'SNIRHLGDVCYFKTQPEAMW'
+    charged = 'KRED'
+    charged_ = 'KREDH'
+    non_polar = 'GAVCPLIMWF'
+    polar = 'STYNQ'
+    # #get arguments from cmd    
+    ok = True                           
+    AAset = input('Introducde AAset: ').upper()
+    if AAset == 'ALL':
+        AAset =set(all_AA)
+    elif AAset =='CHARGED':
+        AAset = set(charged)
+    elif AAset == 'POLAR':
+        AAset = set(polar)
+    elif AAset == 'NON POLAR':
+        AAset = set(non_polar)
+    else:
+        ## check if input is correct
+        AAset_ = set(AAset)
+        for aa in AAset_:
+            if aa not in aas:
+                return print('wrong AAset')
+    
+    if ok:
+        ###execute 
+        startTime = time.time()
+        combi_prop = generateCodon(AAset)
+        print(combi_prop)
+        sorted_combi_prop=sorted(combi_prop.items(), key=lambda kv: kv[1],reverse=True)
+        combi_str = ":".join(str(elem[0]) for elem in sorted_combi_prop)
+        prop_str = ":".join(str(int(elem[1])) for elem in sorted_combi_prop)
+
+        print(f'Output: {combi_str}  ratio {prop_str}\n')
+        executionTime = (time.time() - startTime)
+        # print(executionTime,'\n')
+        
+        ## provide equivalent codons and aas coded by each codon 
+        df_all = pd.read_csv('./datasets/deg_codons_DB.csv')
+        eq_str = ''
+        cd_str = ''
+        for ele in sorted_combi_prop:
+            codon = ele[0]
+            equivalents = get_equivalent_codons(df_all, codon)
+            equivalents.remove(codon)
+            s =", ".join(str(elem) for elem in equivalents)
+            if len(equivalents)>0:
+                # print(f'Instead of {codon} you could equivalently use: {s}\n')
+                eq_str+=(f'Instead of {codon} you could equivalently use: {s}\n')
+            coded_aas = get_coded_aas(df_all, codon)
+            s ="".join(str(elem) for elem in coded_aas)
+            cd_str+=(f'Codon {codon} codes for: {s}\n')
+        print(eq_str,'\n',cd_str)
+    
+    else:
+        print('wrong input',AAset)
+        return
 
 if __name__ == '__main__':
-    deg_codon = 'ARA'
-    AAset = 'SNIRHLGDVCYMW'
-    
-    df_all = pd.read_csv('deg_codons_DB.csv')
-    all_AA = 'SNIRHLGDVCYFKTQPEAMW'
-    startTime = time.time()
-    a = generateCodon(all_AA)
-    print(a)
-    
-    executionTime = (time.time() - startTime)
-    print(executionTime)
+    main()

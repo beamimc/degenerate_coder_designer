@@ -294,7 +294,8 @@ def main():
             coded_aas = get_coded_aas(df_all, codon)
             s ="".join(str(elem) for elem in coded_aas)
             cd_str+=(f'Codon {codon} codes for: {s}\n')
-        print(eq_str,'\n',cd_str)
+        print(eq_str)
+        print(cd_str)
     
     else:
         print('wrong input',AAset)

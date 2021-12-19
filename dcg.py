@@ -233,7 +233,7 @@ def generateCodon(AAset):
             else:
                 not_better +=1
             i+=1
-            if not_better >150:
+            if not_better > 200:
                 stop = True 
         combi = best.copy()
         ## get proportions of the best combination found
@@ -242,7 +242,7 @@ def generateCodon(AAset):
 
 def main():
     
-    good_example = 'GAVCPLIMWF'
+    good_example = 'GAVCPLIMWF' #### best by brute force is 4 codons {'ATK': 1.0, 'TKT': 1.0, 'KGG': 1.0, 'SYA': 2.0}
     
     all_AA = 'SNIRHLGDVCYFKTQPEAMW'
     charged = 'KRED'

@@ -118,6 +118,9 @@ def generateCodon(AAset):
 
     ###check if 1 deg_codon codes all AAset
     #######################################
+    best_n_deg_nucl = 15
+    best = pull[0]
+    found_valid = False
     for combi in pull:
         #check if combi meets restriction 1: each aa coded by just 1 codon
         rest_1, total_coded_aas = check_restriction_1(df_all,[combi])
@@ -126,30 +129,54 @@ def generateCodon(AAset):
             valid_combi = True
             for AA in AAset:
                 if AA not in total_coded_aas:
-                    # print('not valid')
                     valid_combi = False
+                    break
             if valid_combi:
-                # if found a valid combi we stop bc it is the smallest (1codon)
-                combi_prop = same_probability(df_all,[combi])
-                return combi_prop
+                found_valid = True
+                n_deg_nucl = get_num_deg_nucl([combi])
+                # print(n_deg_nucl)
+                if n_deg_nucl == 0:
+                    #if found a valid combi without deg nucleotides stop bc it 
+                    #is already the best: the smallest (1codon) with 0 deg nucl
+                    #(would only happen when trying to code 1 aminoacid)
+                    combi_prop = same_probability(df_all,[combi])
+                    return combi_prop
+                elif n_deg_nucl < best_n_deg_nucl:
+                    best = combi
+                    best_n_deg_nucl = n_deg_nucl
+    #after cheking all combinations of 1:
+    #if found any validwe stop bc it is the smallest (1codon)
+    if found_valid:
+        print('after all ')
+        #return the best one, i.e the one with less deg nucleotides
+        # and 0 deg nucl
+        combi_prop = same_probability(df_all,[best])
+        return combi_prop
+    
+    ###brute force in case combinations of 1 codon were not found
+    #############################################################
+    #solve by brute force -> works but too much time or OutOfMemoryError
+    #only do if nº of posible combinations is < 2000 bc checking all this
+    #combinations takes a reasonable time 
+    #directly skip if num of codons in pull is > 65 bc combinations of 2 
+    #out of 65 items is already >2000
+    #best solution guaranteed
     greedy = False
     if len(pull) < 65 : 
         print('brute force')
-        #solve by brute force -> works but too much time or OutOfMemoryError
-        #only do if nº of posible combinations is < 2000        
-        #directly skip if num of codons in pull is > 65 bc combinations of 2 
-        #out of 65 items is already >2000
-        #best solution guaranteed
-        ############################################
-        #at most, the max num of deg_codon needed would be the nº of AA in AAset
+        #at most, the max num of deg_codon needed would be num of AA in AAset
         max_codons = len(AAset)
+        #start looking for combis of 2 bc combinations of 1 already checked
         for i in range(2,max_codons+1):
             print('combinations of, ',i)
             combinations = list(it.combinations(pull, i))
             print(len(combinations))
             if len(combinations) < 2000:
+                best_n_deg_nucl = 15
+                best = pull[0]
+                found_valid = False
                 for combi in combinations:
-                    #check if combi meets restrict 1: each aa coded by just 1 codon
+                    #check if combi meets restr 1: each aa coded by just 1 codon
                     rest_1, total_coded_aas = check_restriction_1(df_all,combi)
                     if rest_1:
                         ##if rest_1 is met, check if all aas in AAset are coded
@@ -158,25 +185,36 @@ def generateCodon(AAset):
                             if AA not in total_coded_aas:
                                 # print('not valid')
                                 valid_combi = False
+                                break
                         if valid_combi:
-                            #if found a valid combi, stop bc it is the smallest
-                            #since started checking combinations of 1, then 2,etc
-                            combi_prop = same_probability(df_all,combi)
-                            return combi_prop
+                            found_valid = True
+                            n_deg_nucl = get_num_deg_nucl([combi])
+                            if n_deg_nucl < best_n_deg_nucl:
+                                best = combi
+                                best_n_deg_nucl = n_deg_nucl
+                if found_valid:
+                    #if found a valid combi, stop bc it is the smallest
+                    #since started checking combinations of 1, then 2,etc
+                    #return the best one found (min num deg nucl)
+                    combi_prop = same_probability(df_all,best)
+                    return combi_prop
             else:
                 greedy = True
                 break
     else:
         greedy = True
+        
+    #variation of greedy search until stop condition is met -> fast
+    #best solution not guaranteed
+    #####################################  
+    #in cases combinations of 1 did not work and searching by brute force
+    #takes too many computaional power
     if greedy:
-        #variation of greedy search until stop condition is met -> fast
-        #best solution not guaranteed
-        #####################################
         print('greedy')
         stop = False
         best = pull
         best_n = len(pull)
-        i = 0
+        best_n_deg_nucl=15
         not_better = 0
         while not stop:
             ##inicialize on random codon, then greddy search to get full combi
@@ -209,16 +247,35 @@ def generateCodon(AAset):
                 #meet restriction 2: 
                 #only use deg_codons that do not code aas outside AAset 
                 df = restriction_2(df,AAset_)
-            
-            
+            #if new combi has less codons than the best so far, keep it
             if len(combi)<len(best):
+                n_deg_nucl = get_num_deg_nucl(combi)
                 best = combi.copy()
                 best_n = len(combi)
+                best_n_deg_nucl = n_deg_nucl
+                #restart stop condition counter
+                not_better = 0
+            #if new combi has same number of codons than the best so far
+            #keep it only if it has less deg nucleotides
+            elif len(combi)==len(best):
+                n_deg_nucl = get_num_deg_nucl(combi)
+                if n_deg_nucl < best_n_deg_nucl:
+                    best = combi.copy()
+                    best_n = len(combi)
+                    best_n_deg_nucl = n_deg_nucl
+                    #restart stop condition counter
+                    not_better = 0
+                else:
+                    #increment stop condition counter
+                    not_better +=1
             else:
+                #increment stop condition counter
                 not_better +=1
-            i+=1
-            if not_better > 200:
+            #stop condition: stop if not found a better solution after 300 iters
+            if not_better > 300:
                 stop = True 
+        print(best_n, best_n_deg_nucl)
+        
         combi = best.copy()
         ## get proportions of the best combination found
         combi_prop = same_probability(df_all,combi)
@@ -276,7 +333,7 @@ introduced by their one letter representation')
     
     #sort result in order to provide ratios in descendent order
     sorted_combi_prop=sorted(combi_prop.items(), key=lambda kv: kv[1],reverse=True)
-    combi_str = ":".join(str(elem[0]) for elem in sorted_combi_prop)
+    combi_str = ",".join(str(elem[0]) for elem in sorted_combi_prop)
     prop_str = ":".join(str(int(elem[1])) for elem in sorted_combi_prop)
     
     #show result

@@ -49,7 +49,7 @@ f.close()
 # st.title('Degenerate Codon Designer')
 
 options ={'All (SNIRHLGDVCYFKTQPEAMW)':'SNIRHLGDVCYFKTQPEAMW',
-          'Charged (KREDH)':'KRED',
+          'Charged (KREDH)':'KREDH',
           'KRED':'KRED',
           'Non polar (GAVCPLIMWF) ':'GAVCPLIMWF',
           'Polar (STYNQ)':'STYNQ',
@@ -79,7 +79,7 @@ if ok:
         with st.spinner('Designing degenerated codons...'):
             combi_prop = generateCodon(AAset)
         sorted_combi_prop=sorted(combi_prop.items(), key=lambda kv: kv[1],reverse=True)
-        combi_str = ":".join(str(elem[0]) for elem in sorted_combi_prop)
+        combi_str = ",".join(str(elem[0]) for elem in sorted_combi_prop)
         prop_str = ":".join(str(int(elem[1])) for elem in sorted_combi_prop)
         
         st.success(f'{combi_str}  ratio {prop_str}\n')
@@ -94,7 +94,7 @@ if ok:
                            str(sorted_combi_prop[i][0]), 
                            '')
             cols[j].metric("Ratio",
-                         str(sorted_combi_prop[i][1]), 
+                         str(int(sorted_combi_prop[i][1])), 
                          '')
     
         ## provide equivalent codons and aas coded by each codon 

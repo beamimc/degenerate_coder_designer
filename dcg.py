@@ -9,7 +9,6 @@ import math
 import time
 import itertools as it
 import random
-import argparse
 
 from global_variables import *
 
@@ -86,13 +85,6 @@ def same_probability(df_all,list_deg_codons):
         # proportions.append(ele/gcm)
     return cod_prop
 
-def get_equivalent_codons(df_all, deg_codon):
-    # newdf1 = df_all.groupby(aas)
-    for _, df in  df_all.groupby(aas):
-        codons = df['deg_codon'].tolist()
-        if deg_codon in codons:
-            return codons
-    
 def get_num_deg_nucl(list_deg_codons):
     count=0
     for deg_codon in list_deg_codons:
@@ -100,6 +92,17 @@ def get_num_deg_nucl(list_deg_codons):
             if nucl not in 'ATCG':
                 count+=1
     return(count)
+
+def get_equivalent_codons(df_all, deg_codon):
+    n_deg_nucl = get_num_deg_nucl([deg_codon])
+    codons_ = []
+    for _, df in  df_all.groupby(aas):
+        codons = df['deg_codon'].tolist()
+        if deg_codon in codons:
+            for codon in codons:
+                if get_num_deg_nucl([codon]) ==n_deg_nucl:
+                    codons_.append(codon)
+            return codons_
 
 def generateCodon(AAset):
     #get all posible deg_codons without 'duplicated codons' i.e codons that 
@@ -291,9 +294,7 @@ def main():
     charged = 'KREDH'
     polar = 'STYNQ'  
     non_polar = 'GAVCPLIMWF'
-    
-    ok = True       
-    run = True                   
+                
     
     #welcome message to user
     print('\nDEGENERATE CODON DESIGNER')
@@ -331,7 +332,7 @@ introduced by their one letter representation')
     #execution
     combi_prop = generateCodon(AAset)
     
-    #sort result in order to provide ratios in descendent order
+    #sort result to provide ratios in descendent order
     sorted_combi_prop=sorted(combi_prop.items(), key=lambda kv: kv[1],reverse=True)
     combi_str = ",".join(str(elem[0]) for elem in sorted_combi_prop)
     prop_str = ":".join(str(int(elem[1])) for elem in sorted_combi_prop)
@@ -348,10 +349,12 @@ introduced by their one letter representation')
         codon = ele[0]
         equivalents = get_equivalent_codons(df_all, codon)
         equivalents.remove(codon)
+        #create string to show user
         s =", ".join(str(elem) for elem in equivalents)
         if len(equivalents)>0:
             eq_str+=(f'Instead of {codon} you could equivalently use: {s}\n')
         coded_aas = get_coded_aas(df_all, codon)
+        #create string to show user
         s ="".join(str(elem) for elem in coded_aas)
         cd_str+=(f'Codon {codon} codes for: {s}\n')
     print(eq_str)

@@ -29,21 +29,21 @@ codon_aa={
         }
 #diccionary with degenerate nucleotides and the list of nucleotides they work as 
 deg_nucl={
-         'A':['A'],
-         'T':['T'],
-         'C':['C'],
-         'G':['G'],
-         'B':['G','T','C'],
-         'D':['G','A','T'],
-         'H':['A','T','C'],
-         'K':['G','T'],
-         'M':['A','C'],
-         'N':['A','C','G','T'],
-         'R':['A','G'],
-         'S':['G','C'],
-         'V':['A','C','G'],
-         'W':['A','T'],
-         'Y':['C','T']
+         'A':'A',
+         'T':'T',
+         'C':'C',
+         'G':'G',
+         'B':'GTC',
+         'D':'GAT',
+         'H':'ATC',
+         'K':'GT',
+         'M':'AC',
+         'N':'ACGT',
+         'R':'AG',
+         'S':'GC',
+         'V':'ACG',
+         'W':'AT',
+         'Y':'CT'
         }
 #relative paths to csv 
 #these csv wewre created with the script create_deg_codons_DB.py

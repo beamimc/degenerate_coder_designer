@@ -47,5 +47,5 @@ deg_nucl={
         }
 #relative paths to csv 
 #these csv wewre created with the script create_deg_codons_DB.py
-CODON_DB ='./datasets/deg_codons_DB.csv'
-CLEAN_CODON_DB = './datasets/deg_codons_DB_clean.csv'
+CODON_DB ='../datasets/deg_codons_DB.csv'
+CLEAN_CODON_DB = '../datasets/deg_codons_DB_clean.csv'

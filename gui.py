@@ -38,7 +38,7 @@ def main():
          ('Main page', 'See an example', ))
     
     #show svg image as page title 
-    f = open("logo.svg","r")
+    f = open("./static/logo.svg","r")
     lines = f.readlines()
     line_string=''.join(lines)
     render_svg(line_string)
@@ -47,7 +47,7 @@ def main():
    
     # st.subheader('Select AA set') 
     col1,col2 = st.columns(2)
-    col2.image('chart.png')
+    col2.image('./static/chart.png')
     #set options and get input AAset from user
     options ={'All (SNIRHLGDVCYFKTQPEAMW)':'SNIRHLGDVCYFKTQPEAMW',
               'Charged (KREDH)':'KREDH',

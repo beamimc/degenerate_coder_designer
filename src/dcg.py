@@ -10,46 +10,115 @@ import time
 import itertools as it
 import random
 
-from global_variables import *
+from .global_variables import *
 
-        
-def gcm_multiple(list_numbers):
+def gcd_multiple(list_numbers):
+    '''
+    get the greatest common divisor of a list of numbers
+
+    Parameters
+    ----------
+    list_numbers : list
+            list of numbers
+
+    Returns
+    -------
+    int
+        greatest common divisor of the list of numbers.
+
+    '''
+    #if there is a 1 in the list, gcm is 1
     if 1 in list_numbers:
         return 1
+    #if only one number in list, gcm is that number
     elif len(list_numbers)==1:
         return list_numbers[0]
+    #if two numbers in list, calculate gcm with math.gcd
     elif len(list_numbers) == 2:
         return math.gcd(list_numbers[-1],list_numbers[-2]) 
+    #if there are more than 2 numbers
     else:
+        #remove last two numers
         new_list = list_numbers[:-2]
-        last_gcm = math.gcd(list_numbers[-1],list_numbers[-2])
-        new_list.append(last_gcm)
-        return gcm_multiple(new_list)
+        #calculate gcd of those two numbers
+        last_gcd = math.gcd(list_numbers[-1],list_numbers[-2])
+        #append the gcd
+        new_list.append(last_gcd)
+        #recursively will call function until 1 in list or only 2 numbers left
+        return gcd_multiple(new_list)
     
 def check_restriction_1(df_all,list_deg_codons):
-    # ## codons cannot repeat AAs -- 1aa - 1 codon -- 
-    #get only codons that are being cheked right now
-    # df = df_all[df_all['deg_codon'].isin(list_deg_codons)]
+    '''
+    check if codons from a list of codons repeat aminoacids and calculate
+    the aminoacids coded by the whole set of codons
+    restriction 1 : codons cannot repeat AAs -> each aa coded by just 1 codon 
+
+    Parameters
+    ----------
+    df_all : pandas DataFrame
+        df with codons as rows and the number of times they code each aa as columns
+    list_deg_codons : list
+        list of codon we want to chek if they code the same aas or not
+
+    Returns
+    -------
+    bool
+        True if codons do not repeat aminoacids. False if they do
+    set
+        Set of the total aminoacids coded by all the codons in list_deg_codons
+
+    '''
     total_coded_aas = []
     for deg_codon in list_deg_codons:
+        #get aas coded by each codon 
         coded_aas=get_coded_aas(df_all, deg_codon)
         total_coded_aas.extend(coded_aas)
     if len(total_coded_aas)>len(set(total_coded_aas)):
-        ##if any aa is coded more than one time -> more than 1 codong are 
-        ## coding the same aa 
+        #if any aa is coded more than one time -> more than 1 codong are 
+        #coding the same aa 
         return False,set(total_coded_aas)
     else:
         return True,set(total_coded_aas)
 
 def restriction_3(df_all):
-    ##restrict to only viable codons
-    ##restriction 3: codon must encode all aas with same prob
+    '''
+    create df with only viable codons, i.e remove codons that code more than
+    one aminoacid with different probabilities
+    restriction 3: codons must encode all aas with same probability
+    
+    Parameters
+    ----------
+    df_all : pandas DataFrame
+        original df of codons (rows) and their aminoacids (columns)
+
+    Returns
+    -------
+    df_all : pandas DataFrame
+        filtered df with only viable codons
+
+    '''
     for aa in aas:
         df_all = df_all[df_all[aa]<=1]
     df_all = df_all.reset_index(drop=True)
     return df_all
 
 def get_coded_aas(df_all, deg_codon):
+    '''
+    calculate aminoacids coded by a given degenerated codon
+
+    Parameters
+    ----------
+    df_all : pandas DataFrame
+        df of codons (rows) and their aminoacids (columns)
+    deg_codon : string
+        degenerated codon
+
+    Returns
+    -------
+    coded_aas : list
+        list of aminoacids coded by deg_codon
+
+    '''
     df = df_all[aas][df_all['deg_codon'] == deg_codon]
     df = df.reset_index(drop=True)
     coded_aas = []
@@ -59,13 +128,30 @@ def get_coded_aas(df_all, deg_codon):
     return coded_aas
 
 def restriction_2(df_all,AAset):
-    # coded_aas = get_coded_aas(df_all, deg_codon)
-    ##restriction 2: deg_codon must not encoded aa not in AAset
-    ## this also retricts those deg_codon that code a STOP
+    '''
+    create df with only codons that do not code aas outside AAset
+    restriction 2: deg_codon must not encoded aa not in AAset
+
+    Parameters
+    ----------
+    df_all : pandas DataFrame
+        df of codons (rows) and their aminoacids (columns)
+    AAset : set
+        set of aminoacids that need to be coded
+
+    Returns
+    -------
+    df : pandas DataFrame
+        filtered df with only codons that do not code aminoacids outside AAset
+
+    '''
     to_drop = []
+    #check all aminoacids
     for aa in aas:
         index_drop=[]
+        #if aminoacid not in AAset, remove codons that code them
         if aa not in AAset:
+            #get index of rows (codons) that code that aa more than 0 times 
             index_drop = df_all.index[df_all[aa] > 0].tolist()
         to_drop.extend(index_drop)
     df = df_all.drop(to_drop, axis =0)
@@ -73,38 +159,102 @@ def restriction_2(df_all,AAset):
     return df
 
 def same_probability(df_all,list_deg_codons):
+    '''
+    given a set of degenerated codons, calculate ratio, so that all aminoacids
+    coded by all of them are coded with same probabilities
+
+    Parameters
+    ----------
+    df_all : pandas DataFrame
+        df of codons (rows) and their aminoacids (columns)
+    list_deg_codons : list
+        list of degenerated codons
+
+    Returns
+    -------
+    cod_prop : dictionary
+        dictionary with codons as keys and ratios as values.
+
+    '''
     len_list =[]
     for deg_codon in list_deg_codons:
         coded_aas= get_coded_aas(df_all, deg_codon)
         len_list.append(len(coded_aas))
-    gcm = gcm_multiple(len_list)
-    proportions = []
+    gcm = gcd_multiple(len_list)
     cod_prop={}
     for i in range(len(len_list)):
         cod_prop[list_deg_codons[i]] = len_list[i] / gcm
-        # proportions.append(ele/gcm)
     return cod_prop
 
 def get_num_deg_nucl(list_deg_codons):
+    '''
+    calculate number of degenerated nucleotides used in a set of codons
+
+    Parameters
+    ----------
+    list_deg_codons : list
+        list of degenerated codons
+
+    Returns
+    -------
+    int
+        number of degenerated nucleotides in the list of degenerated codons
+
+    '''
     count=0
     for deg_codon in list_deg_codons:
         for nucl in deg_codon:
+            #if nucleotide is not A T C or G, it is a degenerated nucleotide
             if nucl not in 'ATCG':
                 count+=1
     return(count)
 
 def get_equivalent_codons(df_all, deg_codon):
+    '''
+    given a degenerated codon, find all equivalent codons i.e those that code
+    the same aminoacids with same probabilities, and also have the same number
+    of degenerated nucleotides
+
+    Parameters
+    ----------
+    df_all : pandas DataFrame
+        df of codons (rows) and their aminoacids (columns)
+    deg_codon : string
+        degenerated codon
+
+    Returns
+    -------
+    equivalents : list
+        list of equivalent codons
+
+    '''
     n_deg_nucl = get_num_deg_nucl([deg_codon])
-    codons_ = []
+    equivalents = []
     for _, df in  df_all.groupby(aas):
         codons = df['deg_codon'].tolist()
         if deg_codon in codons:
             for codon in codons:
-                if get_num_deg_nucl([codon]) ==n_deg_nucl:
-                    codons_.append(codon)
-            return codons_
+                if get_num_deg_nucl([codon]) == n_deg_nucl:
+                    equivalents.append(codon)
+            return equivalents
 
 def generateCodon(AAset):
+    '''
+    calculate the minimun set of degenerated codons to code all the aminoacids
+    in a given AAset 
+
+    Parameters
+    ----------
+    AAset : set
+        set of aminoacids that to be coded
+
+    Returns
+    -------
+    combi_prop : dictionary
+        dictionary with codons as keys, and their proportions/ratio needed so as
+        all aminoacids are coded in the same probability as values.
+
+    '''
     #get all posible deg_codons without 'duplicated codons' i.e codons that 
     #code the same aminoacids with same probabilities
     df_all = pd.read_csv(CLEAN_CODON_DB)
@@ -117,7 +267,6 @@ def generateCodon(AAset):
 
     #get pull of deg_codons that can be used to create a combination
     pull = df_all['deg_codon'].tolist()
-    print(len(pull))
 
     ###check if 1 deg_codon codes all AAset
     #######################################
@@ -150,7 +299,6 @@ def generateCodon(AAset):
     #after cheking all combinations of 1:
     #if found any validwe stop bc it is the smallest (1codon)
     if found_valid:
-        print('after all ')
         #return the best one, i.e the one with less deg nucleotides
         # and 0 deg nucl
         combi_prop = same_probability(df_all,[best])
@@ -166,14 +314,12 @@ def generateCodon(AAset):
     #best solution guaranteed
     greedy = False
     if len(pull) < 65 : 
-        print('brute force')
+        print('trying brute force...')
         #at most, the max num of deg_codon needed would be num of AA in AAset
         max_codons = len(AAset)
         #start looking for combis of 2 bc combinations of 1 already checked
         for i in range(2,max_codons+1):
-            print('combinations of, ',i)
             combinations = list(it.combinations(pull, i))
-            print(len(combinations))
             if len(combinations) < 2000:
                 best_n_deg_nucl = 15
                 best = pull[0]
@@ -191,7 +337,7 @@ def generateCodon(AAset):
                                 break
                         if valid_combi:
                             found_valid = True
-                            n_deg_nucl = get_num_deg_nucl([combi])
+                            n_deg_nucl = get_num_deg_nucl(combi)
                             if n_deg_nucl < best_n_deg_nucl:
                                 best = combi
                                 best_n_deg_nucl = n_deg_nucl
@@ -208,12 +354,12 @@ def generateCodon(AAset):
         greedy = True
         
     #variation of greedy search until stop condition is met -> fast
-    #best solution not guaranteed
-    #####################################  
+    ###############################################################  
     #in cases combinations of 1 did not work and searching by brute force
-    #takes too many computaional power
+    #takes too much computaional power
+    #best solution not guaranteed
     if greedy:
-        print('greedy')
+        print('greedy search...')
         stop = False
         best = pull
         best_n = len(pull)
@@ -277,69 +423,42 @@ def generateCodon(AAset):
             #stop condition: stop if not found a better solution after 300 iters
             if not_better > 300:
                 stop = True 
-        print(best_n, best_n_deg_nucl)
+        # print(best_n, best_n_deg_nucl)
         
         combi = best.copy()
-        ## get proportions of the best combination found
+        #get proportions (ratio) of the best combination found
         combi_prop = same_probability(df_all,combi)
         return combi_prop
 
-def main():
-    
-    good_example = 'GAVCPLIMWF' #### best by brute force is 4 codons {'ATK': 1.0, 'TKT': 1.0, 'KGG': 1.0, 'SYA': 2.0}
-    example = 'GAVCPLIMWFKRED' ## best is 4 codons
-    exampl = 'STYNQKRED'
-    
-    all_AA = 'SNIRHLGDVCYFKTQPEAMW'
-    charged = 'KREDH'
-    polar = 'STYNQ'  
-    non_polar = 'GAVCPLIMWF'
-                
-    
-    #welcome message to user
-    print('\nDEGENERATE CODON DESIGNER')
-    print('Program to desgin the minimun combination of degenerate codons that \
-code all the aminoacids given (AAset) in equal proportions\n')
-    print('Please, provide de AAset you want to code. Aminoacids have to be \
-introduced by their one letter representation')
-    print('E.g: input KRED for coding Lys, Arg, Glu and Asp\n')
-    print('Shortcut inputs:\n \
-    -- all: SNIRHLGDVCYFKTQPEAMW \n \
-    -- charged: KREDH \n \
-    -- polar: STYNQ \n \
-    -- non polar: GAVCPLIMWF')
-    print('E.g: input "all" would be equal to input SNIRHLGDVCYFKTQPEAMW\n')
-    #get input
-    AAset = input('Introducde AAset: ').upper()
-    # check input
-    if AAset == 'ALL':
-        AAset =set(all_AA)
-    elif AAset =='CHARGED':
-        AAset = set(charged)
-    elif AAset == 'POLAR':
-        AAset = set(polar)
-    elif AAset == 'NON POLAR':
-        AAset = set(non_polar)
-    else:
-        ## check if input is correct
-        AAset = set(AAset)
-        for aa in AAset:
-            if aa not in aas:
-                return print('The introduced input was not a valid AAset')
-            
-    #if input is ok run the program
-    # startTime = time.time()
+def run_generateCodon(AAset):
+    '''
+    runs program to calculate minimun degenerated codons given an AAset,
+    calculates which aminoacids are coded by each codon, and calculates 
+    equivalent codons of each.
+
+    Parameters
+    ----------
+    AAset : set
+        set of aminoacids that to be coded
+
+    Returns
+    -------
+    sorted_combi_prop : dictionary
+        dictionary with codons as keys, and their proportions/ratio as values
+        sorted by values in descendent way
+    eq_str : string
+        string to print user the equivalent codons of each codon.
+    cd_str : string
+        string to print user the aminoacids coded by each codon.
+
+    '''
     #execution
     combi_prop = generateCodon(AAset)
     
     #sort result to provide ratios in descendent order
-    sorted_combi_prop=sorted(combi_prop.items(), key=lambda kv: kv[1],reverse=True)
-    combi_str = ",".join(str(elem[0]) for elem in sorted_combi_prop)
-    prop_str = ":".join(str(int(elem[1])) for elem in sorted_combi_prop)
-    
-    #show result
-    print(f'Output: {combi_str}  ratio {prop_str}\n')
-    # executionTime = (time.time() - startTime)
+    sorted_combi_prop=sorted(combi_prop.items(), 
+                             key=lambda kv: kv[1],
+                             reverse=True)
     
     #provide equivalent codons and aas coded by each codon 
     df_all = pd.read_csv(CODON_DB)
@@ -357,9 +476,5 @@ introduced by their one letter representation')
         #create string to show user
         s ="".join(str(elem) for elem in coded_aas)
         cd_str+=(f'Codon {codon} codes for: {s}\n')
-    print(eq_str)
-    print(cd_str)
-    return
 
-if __name__ == '__main__':
-    main()
+    return sorted_combi_prop, eq_str, cd_str

@@ -8,14 +8,12 @@
 import pandas as pd
 import streamlit as st
 import base64
-import textwrap
 import plotly.graph_objects as go
 
 from plotly.subplots import make_subplots
-from PIL import Image
 
-from dcg import generateCodon, get_equivalent_codons, get_coded_aas, check_restriction_1
-from global_variables import *
+from src.dcg import generateCodon, get_equivalent_codons, get_coded_aas, check_restriction_1
+from src.global_variables import *
 
 #render_svg function code from https://discuss.streamlit.io/t/is-there-a-way-to-show-svg-url-as-an-image-in-streamlit/12461
 def render_svg(svg):
@@ -25,6 +23,7 @@ def render_svg(svg):
     st.write(html, unsafe_allow_html=True)
 
 def main():
+    ''' To run GUI of Degenerate Codon Designer made with streamlit '''
     #config page
     st.set_page_config(
          page_title="Degenerate Codon Designer",
@@ -52,10 +51,12 @@ def main():
     options ={'All (SNIRHLGDVCYFKTQPEAMW)':'SNIRHLGDVCYFKTQPEAMW',
               'Charged (KREDH)':'KREDH',
               'KRED':'KRED',
-              'Non polar (GAVCPLIMWF) ':'GAVCPLIMWF',
-              'Polar (STYNQ)':'STYNQ',
+              'Non polar alifatic (GAVLMIP) ':'GAVLMIP',
+              'Polar (STCNQ)':'STCNQ',
+              'Aromatic (FYW)':'FWY',
               'Custom':''
                 }
+
     col1.subheader('Select AA set')
     option = col1.radio('Select one or more aminoacids\n', 
                       list(options.keys()))
@@ -166,8 +167,8 @@ def main():
                         specs=specs,
                         subplot_titles=[
                             '(A) Number of AAs <br /> coded by each codon', 
-                            '(B) Percent of <br /> AAset coded', 
-                            '(C) Percent of AAs <br /> coded outside AAset'
+                            '(B) Percentage of <br /> AAset coded', 
+                            '(C) Percentage of AAs <br /> coded outside AAset'
                             ])
             fig.add_trace(go.Pie(
                         labels = list(aux.keys()),

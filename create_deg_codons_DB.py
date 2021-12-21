@@ -6,8 +6,8 @@
 import pandas as pd
 import os 
 
-from global_variables import *
-from dcg import gcm_multiple
+from src.global_variables import *
+from src.dcg import gcd_multiple
 
 def get_all_real_codons(deg_codon):
     '''
@@ -60,7 +60,7 @@ def deg_codon_to_aa(deg_codon):
     # e.g AAN codes K 2 times and N 2 times, so it would be equivalent to 
     # put K 1 time and N 1 time, since the prob of coding each is 0.5 
     prop = (df_aas[df_aas['count']>0]['count'].tolist())
-    gcm = gcm_multiple(prop)
+    gcm = gcd_multiple(prop)
     df_aas.loc[:,'count'] = df_aas.loc[:,'count'] / gcm 
     
     #create dictionaty with result, so it is easier to append to a df
@@ -131,8 +131,8 @@ def main():
         os.mkdir(directory)
         
     #new file names
-    filename = 'deg_codons_DB.csv'
-    filename_clean = 'deg_codons_DB_clean.csv'
+    filename = 'deg_codons_DB1.csv'
+    filename_clean = 'deg_codons_DB_clean1.csv'
     
     #execute 
     print('Creating DB and cleaned DB...') 

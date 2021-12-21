@@ -89,7 +89,7 @@ def main():
     #set options and get input AAset from user
     options ={'All (SNIRHLGDVCYFKTQPEAMW)':'SNIRHLGDVCYFKTQPEAMW',
               'Charged (KRED)':'KRED',
-              'Non polar alifatic (GAVLMIP) ':'GAVLMIP',
+              'Non polar aliphatic (GAVLMIP) ':'GAVLMIP',
               'Polar (STCNQ)':'STCNQ',
               'Aromatic (FYW)':'FWY',
               'Custom':''

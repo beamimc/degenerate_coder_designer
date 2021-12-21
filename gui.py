@@ -46,7 +46,7 @@ def main():
    
     # st.subheader('Select AA set') 
     col1,col2 = st.columns(2)
-    col2.image('./static/chart.png')
+    col2.image('./static/chart.png','source: https://www.chegg.com/homework-help/questions-and-answers/codon-chart-2-examine-first-set-codons-data-table-1-convert-codons-amino-acids-code-record-q13230925')
     #set options and get input AAset from user
     options ={'All (SNIRHLGDVCYFKTQPEAMW)':'SNIRHLGDVCYFKTQPEAMW',
               'Charged (KREDH)':'KREDH',
@@ -146,8 +146,8 @@ def main():
                      change</li></ul><ul><li>have the same number of\
                          degenerated nucleotides</li></ul>', True)
                 nucl_df = pd.DataFrame(list(deg_nucl.items()),
-                                columns=(['Base IUB Code','Base Definition']))
-                #show table with deg nucleotides and their definitions
+                                columns=(['Base IUB Code','Bases Represented']))
+                #show table with deg nucleotides and bases they represent
                 col2.table(nucl_df)
             
             #get total coded aas by codon set 

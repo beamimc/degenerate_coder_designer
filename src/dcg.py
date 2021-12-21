@@ -314,7 +314,7 @@ def generateCodon(AAset):
     #best solution guaranteed
     greedy = False
     if len(pull) < 65 : 
-        print('trying brute force...')
+        # print('trying brute force...')
         #at most, the max num of deg_codon needed would be num of AA in AAset
         max_codons = len(AAset)
         #start looking for combis of 2 bc combinations of 1 already checked

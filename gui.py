@@ -15,53 +15,72 @@ from plotly.subplots import make_subplots
 from src.dcg import *
 from src.global_variables import *
 
-#render_svg function code from https://discuss.streamlit.io/t/is-there-a-way-to-show-svg-url-as-an-image-in-streamlit/12461
-def render_svg(svg):
+#variation of render_svg() function code from https://discuss.streamlit.io/t/is-there-a-way-to-show-svg-url-as-an-image-in-streamlit/12461
+def render_svg():
     """Renders the given svg string."""
+    f = open("./static/logo.svg","r")
+    lines = f.readlines()
+    svg=''.join(lines)
+    f.close()
+
     b64 = base64.b64encode(svg.encode('utf-8')).decode("utf-8")
     html = r'<img src="data:image/svg+xml;base64,%s"/>' % b64
-    st.write(html, unsafe_allow_html=True)
+    return html
 
-    #config page
+#set logo (page title) as global so its not calculated each time the program runs
+LOGO_HTML = render_svg()
 
-    
 def main():
     ''' To run GUI of Degenerate Codon Designer on streamlit '''
     
     ##strings to show explanation of examples
-    example_all='This is known as the ‘MAX’ degenerate codon set. This could\
+    example_all='This is known as the ‘MAX’ degenerate codon set. This set could\
     be used when we want to mutate the a certain position of the protein with all\
-    amino acids. We want that position to be any of the 20 natural AAs, with equal\
+    amino acids. That position will mutate to be any of the 20 natural AAs, \
+    with equal probabilities.'
+    example_KRED='This set could be used to mutate in a case we want to mutate\
+    a charged residue of a protein (e.g a voltage indicator) to either \
+    positively charged (KR) or negatively charged residues (ED) with equal \
     probabilities.'
-    
-    example_KRED='This set could be used to mutate one of the charged residues\
-    of a protein (e.g a voltage indicator) to either positively charged or negatively\
-    charged residues K, R, E, or D.'
-    example_polar='3'
+    example_polar='This set could be used in order to mutate a known polar residue\
+    in a protein, to see if any other polar group would enhance its action. E.g.\
+    we have a certain protein in which a residue is known to be key in the binding \
+    of a ligand. With this set, we would be able to generate a library of mutants \
+    with all the polar aminoacids on that position, thus search for another one\
+    that could make the protein-ligand interaction stronger.'
+    example_polar='This set could be used in order to mutate a known polar residue\
+    in a protein, to see if any other polar group would enhance its action. E.g.\
+    we have a certain protein in which a residue is known to be key on the binding \
+    of a ligand. With this set, we would be able to generate a library of mutants \
+    with all the polar aminoacids on that position, thus search for another one\
+    that could make the protein-ligand interaction stronger.'
+    example_nonpolar='This set could be used in order to mutate a known polar residue\
+    known to be key in the binding of a ligand. By generating a library \
+    of mutants with non polar aminoacids on that position, we could search for \
+    the best non polar aminoacid that disrupts this interaction the most.'
+    example_aromatic='This set could be used in a case we want to mutate an \
+    aromatic residue of a protein to either of aromatic amino acids (FYW). \
+    Within this mutants, we could search for new properties or stronger/weaker\
+    interactions due to changes in Pi-Stacking.'
     examples = {'SNIRHLGDVCYFKTQPEAMW':example_all,
                 'KRED':example_KRED,
-                'STCNQ':example_polar}
-    
+                'STCNQ':example_polar,
+                'GAVLMIP':example_nonpolar,
+                'FYW':example_aromatic}
+   
+    #config page
     st.set_page_config(
          page_title="Degenerate Codon Designer",
          page_icon="🔀",
          )
 
-    #upper nav bar
-    ##############
-    #just for the look - doesnt do anything (yet->intention to scale)
-    nav_bar =  st.container()
-    nav_option = st.selectbox('',
-         ('Main page', '', ))
     
-    #show svg image as page title 
+    #show page title 
     #########
-    f = open("./static/logo.svg","r")
-    lines = f.readlines()
-    line_string=''.join(lines)
-    render_svg(line_string)
-    f.close()
-    
+    st.write(LOGO_HTML, unsafe_allow_html=True)
+    st.markdown('<b>Desgin the minimun set of degenerate codons that \
+    encode all the amino acids given (AAset) in equal probabilities</b>'
+                , True)
        
     #show main menu 
     ###############
@@ -69,14 +88,13 @@ def main():
     col1.subheader('Select AA set')
     #set options and get input AAset from user
     options ={'All (SNIRHLGDVCYFKTQPEAMW)':'SNIRHLGDVCYFKTQPEAMW',
-              'Charged (KREDH)':'KREDH',
-              'KRED':'KRED',
+              'Charged (KRED)':'KRED',
               'Non polar alifatic (GAVLMIP) ':'GAVLMIP',
               'Polar (STCNQ)':'STCNQ',
               'Aromatic (FYW)':'FWY',
               'Custom':''
                 }
-    option = col1.radio('Select one or more aminoacids\n', 
+    option = col1.radio('Select one or more amino acids\n', 
                   list(options.keys()))
     col2.image('./static/chart.png','Source: https://che.gg/3Hhut5V')
     
@@ -86,7 +104,7 @@ def main():
     if option == 'Custom':
         AAset = st.text_input('Input custom AA set. Aminoacids have to be \
                       introduced by their one letter codification.\
-                      E.g KR for Lys and Arg').upper()
+                      E.g KR for Lys and Arg. X represents STOP codon.').upper()
         AAset_ = set(AAset)
         for aa in AAset_:
             if aa not in aas:
@@ -98,7 +116,7 @@ def main():
     
     #if valid iput, run program 
     if ok:
-        info = st.info(f'Aminoacids selected: {AAset_}')
+        info = st.info(f'Amino acids selected: {AAset_}')
         #run button
         ###########
         run = st.button('Design')
@@ -106,12 +124,12 @@ def main():
             
             #show message while executing generateCodon(AAset)
             ############
-            with st.spinner('Designing degenerated codons...'):
+            with st.spinner('Designing degenerate codons...'):
                 combi_prop = generateCodon(AAset)
             info.empty()
             #show input
             ############
-            st.info(f'Aminoacids selected: {AAset_}')
+            st.info(f'Amino acids selected: {AAset_}')
                 
             #sort result to provide ratios in descendent order
             sorted_combi_prop=sorted(combi_prop.items(), 
@@ -174,10 +192,10 @@ def main():
                 col1, col2 = st.columns(2)
                 col1.markdown(mark_str,True)
                 with col2:
-                    st.metric('Number of degenerated codons',
+                    st.metric('Number of degenerate codons',
                                 f'{int(len(list_deg_codons))}',
                                 '')
-                    st.metric('Number of degenerated nucleotides',
+                    st.metric('Number of degenerate nucleotides',
                                 f'{int(n_deg_nucl)}',
                                 '')
                 #show use-case explanation for all, KRED, aromatic, and polar
@@ -189,10 +207,14 @@ def main():
                     str_example = examples['KRED']
                 elif AAset == set('STCNQ'):
                     str_example = examples['STCNQ']
+                elif AAset == set('GAVLMIP'):
+                    str_example = examples['GAVLMIP']
+                elif AAset == set('FYW'):
+                    str_example = examples['FYW']
                 else:
                     explain = False
                 if explain:
-                    st.markdown(f'<b>Example of a real-world application</b>\
+                    st.markdown(f'<b>Real-world application</b>\
                                 <br/>{str_example}',
                                 True)
             #show legend in an expander container
@@ -259,13 +281,14 @@ def main():
             #show legend for pie charts
             ############
             with st.expander("See figure interpretion"):
-                st.markdown('<b>Pie Chart A:</b> shows the number of \
+                st.markdown("<b>Pie Chart A:</b> shows the number of \
                     aminoacids that each degenerated codon codes for.<br />\
                     <b>Pie Chart B:</b>shows the percentage of the aminoacids,\
                     from the AA set input, that are coded by the codon set \
                     designed.<br /><b>Pie Chart C:</b> shows the percentage of \
                     the aminoacids, coded by the codon set designed, that are \
-                    not included in the input AA set.', True)
+                    not included in the input AA set.<br /> *'AAs' means 'amino acids'"
+                    , True)
                     
     #show error if invalid input
     ############

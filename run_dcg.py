@@ -9,12 +9,8 @@ from src.global_variables import aas
 def main():
     """ To run Degenerate Codon Designer from cmd """
     
-    good_example = 'GAVCPLIMWF' #### best by brute force is 4 codons {'ATK': 1.0, 'TKT': 1.0, 'KGG': 1.0, 'SYA': 2.0}
-    example = 'GAVCPLIMWFKRED' ## best is 4 codons
-    exampl = 'STYNQKRED'
-    
     all_AA = 'SNIRHLGDVCYFKTQPEAMW'
-    charged = 'KREDH'
+    charged = 'KRED'
     polar = 'STCNQ'  
     non_polar = 'GAVLMIP'
     aromatic = 'FWY'
@@ -22,13 +18,13 @@ def main():
     #welcome message to user
     print('\nDEGENERATE CODON DESIGNER')
     print('Program to desgin the minimun combination of degenerate codons that \
-code all the aminoacids given (AAset) in equal proportions\n')
-    print('Please, provide de AAset you want to code. Aminoacids have to be \
-introduced by their one letter representation')
+code all the amino acids given (AAset) in equal probabilities.\n')
+    print('Please, provide de AAset you want to code. Amino acids have to be \
+introduced by their one letter representation. X represents STOP codon.')
     print('E.g: input KRED for coding Lys, Arg, Glu and Asp\n')
     print('Shortcut inputs:\n \
     -- all: SNIRHLGDVCYFKTQPEAMW \n \
-    -- charged: KREDH \n \
+    -- charged: KRED \n \
     -- polar: STCNQ \n \
     -- non polar: GAVLMIP (alifatic)\n \
     -- aromatic: FYW')
@@ -56,6 +52,7 @@ introduced by their one letter representation')
     #if input is ok run the program
     # startTime = time.time()
     #execution
+    print('\nDesigning...')
     sorted_combi_prop, eq_str, cd_str = run_generateCodon(AAset)
     
     #create string to show user

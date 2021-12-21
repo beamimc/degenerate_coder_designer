@@ -315,7 +315,6 @@ def generateCodon(AAset):
     #best solution guaranteed
     greedy = False
     if len(pull) < 65 : 
-        print('trying brute force...')
         #at most, the max num of deg_codon needed would be num of AA in AAset
         max_codons = len(AAset)
         #start looking for combis of 2 bc combinations of 1 already checked
@@ -361,7 +360,6 @@ def generateCodon(AAset):
     #takes too much computaional power
     #best solution not guaranteed
     if greedy:
-        print('greedy search...')
         stop = False
         best = pull
         best_n = len(pull)
@@ -424,8 +422,8 @@ def generateCodon(AAset):
                 #increment stop condition counter
                 not_better +=1
             #stop condition: stop if not found a better solution after 300iters
-            #found that converges after 300 iters, although it a bit more time
-            if not_better > 300:
+            #found that it converges after ~300 iters, although it a bit more time
+            if not_better > 320:
                 stop = True 
         
         combi = best.copy()

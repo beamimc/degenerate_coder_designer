@@ -13,8 +13,8 @@
   plotly==4.14.3
   streamlit==1.3.0
   ```
-  - install each by pip
-  - install all by: `pip -r requirements.txt` 
+  - install each by pip install 
+  - install all by: `pip install -r requirements.txt` 
 # Run program 
  ## Run GUI version running on server (Recomended)
  1. Open this url in your browser 

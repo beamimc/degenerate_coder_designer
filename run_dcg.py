@@ -26,7 +26,7 @@ introduced by their one letter representation. X represents STOP codon.')
     -- all: SNIRHLGDVCYFKTQPEAMW \n \
     -- charged: KRED \n \
     -- polar: STCNQ \n \
-    -- non polar: GAVLMIP (alifatic)\n \
+    -- non polar: GAVLMIP (aliphatic)\n \
     -- aromatic: FYW')
     print('E.g: input "all" would be equal to input SNIRHLGDVCYFKTQPEAMW\n')
     #get input

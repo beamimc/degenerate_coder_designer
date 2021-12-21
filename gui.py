@@ -54,7 +54,7 @@ def main():
     of a ligand. With this set, we would be able to generate a library of mutants \
     with all the polar aminoacids on that position, thus search for another one\
     that could make the protein-ligand interaction stronger.'
-    example_nonpolar='This set could be used in order to mutate a known polar residue\
+    example_nonpolar='This set could be used in order to mutate a polar residue\
     known to be key in the binding of a ligand. By generating a library \
     of mutants with non polar aminoacids on that position, we could search for \
     the best non polar aminoacid that disrupts this interaction the most.'

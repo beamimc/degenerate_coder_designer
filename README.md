@@ -26,7 +26,7 @@ A codon is a sequence of three DNA/RNA nucleotides that corresponds to a specifi
  - `create_deg_codons_DB.py` is script to generate the `datasets/` folder
  ### src/ (module)
 - `global_variables.py` declares global variables of the module
-- dcg.py contains degenerateCodon function that calculates the minimum set of degenerated codons given an AAset
+- `dcg.py` contains degenerateCodon function that calculates the minimum set of degenerate codons given an AAset
 ### datasets/ 
 - contains `deg_codons_DB_clean.csv` and `deg_codons_DB.csv` used during the program, created by create_deg_codons_DB.py
 ### static/
